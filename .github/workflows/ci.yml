@@ -1,0 +1,183 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_benchmark:
+        description: "Run benchmark smoke test"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-ci.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Lint
+        run: |
+          ruff check .
+
+      - name: Build local index
+        run: |
+          python scripts/build_index.py --input data/raw/sample_docs.jsonl --output data/processed/index.json
+
+      - name: Build demo bundle
+        run: |
+          python train_demo.py
+
+      - name: Run evaluation threshold check
+        run: |
+          python scripts/run_eval.py --predictions eval/sample_predictions.json --thresholds eval/thresholds.yaml
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=app --cov=train_demo --cov-report=term --cov-report=xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml-py${{ matrix.python-version }}
+          path: coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          flags: py${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+      - name: Upload evaluation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-artifacts-py${{ matrix.python-version }}
+          path: |
+            eval/sample_predictions.json
+            eval/thresholds.yaml
+            models/demo_bundle.pkl
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: validate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: multimodal-rag:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  benchmark-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: validate
+
+    services:
+      redis:
+        image: redis/redis-stack-server:7.2.0-v10
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-ci.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo apt-get update
+          sudo apt-get install -y gnupg ca-certificates
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Build local index
+        run: |
+          python scripts/build_index.py --input data/raw/sample_docs.jsonl --output data/processed/index.json
+
+      - name: Build demo bundle
+        run: |
+          python train_demo.py
+
+      - name: Start API
+        env:
+          CACHE_ENABLED: "true"
+          CACHE_BACKEND: redis
+          REDIS_URL: redis://localhost:6379/0
+          VECTOR_BACKEND: in_memory
+        run: |
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > uvicorn.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/health > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API failed to start"
+          cat uvicorn.log
+          exit 1
+
+      - name: Run benchmark smoke test
+        run: |
+          python scripts/run_benchmark.py --base-url http://localhost:8000 --rate 20 --duration 15s --preallocated-vus 10 --max-vus 50 --run-name github-actions-smoke
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-smoke-artifacts
+          path: |
+            benchmark_runs/github-actions-smoke/**
+            uvicorn.log

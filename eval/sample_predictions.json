@@ -1,0 +1,6 @@
+{
+  "recall_at_10": 0.9,
+  "mrr": 0.74,
+  "faithfulness": 0.82,
+  "answer_relevancy": 0.84
+}

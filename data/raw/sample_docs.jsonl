@@ -1,0 +1,3 @@
+{"doc_id":"doc-1","text":"Retrieval-augmented generation grounds model responses using external evidence.","modality":"text","metadata":{"source":"msmarco"}}
+{"doc_id":"doc-2","text":"Hybrid retrieval combines dense semantic search with sparse keyword matching for better recall.","modality":"text","metadata":{"source":"paper"}}
+{"doc_id":"doc-3","text":"Citation-aware prompting reduces unsupported claims by forcing evidence attribution.","modality":"text","metadata":{"source":"internal"}}

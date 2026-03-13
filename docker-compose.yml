@@ -1,0 +1,29 @@
+services:
+  rag-api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+  streamlit-dashboard:
+    build: .
+    command: ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - rag-api
+
+  redis:
+    image: redis/redis-stack-server:7.2.0-v10
+    ports:
+      - "6379:6379"

@@ -1,0 +1,7 @@
+# Retrieval targets
+recall_at_10: 0.85
+mrr: 0.70
+
+# Generation quality targets (placeholder for RAGAS exports)
+faithfulness: 0.80
+answer_relevancy: 0.80

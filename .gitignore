@@ -1,0 +1,15 @@
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+uvicorn.log
+.coverage
+coverage.xml
+htmlcov/
+
+# Generated local benchmark runs can be committed selectively if desired.
+benchmark_runs/
+
+# Local environment files
+.env
+

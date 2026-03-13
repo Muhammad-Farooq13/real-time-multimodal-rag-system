@@ -1,0 +1,8 @@
+{
+  "base_url": "http://localhost:8000",
+  "rate": 100,
+  "duration": "1m",
+  "preallocated_vus": 50,
+  "max_vus": 300,
+  "notes": "Increase rate toward 1000 for stress tests once Redis cache and Pinecone are configured."
+}

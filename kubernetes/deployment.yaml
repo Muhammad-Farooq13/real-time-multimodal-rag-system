@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multimodal-rag-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: multimodal-rag-api
+  template:
+    metadata:
+      labels:
+        app: multimodal-rag-api
+    spec:
+      containers:
+        - name: api
+          image: multimodal-rag:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: multimodal-rag-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 20
