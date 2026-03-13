@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import httpx
+import httpx  # noqa: E402
 
-from app.services.benchmarking import load_json, parse_k6_summary, render_benchmark_report
+from app.services.benchmarking import load_json, parse_k6_summary, render_benchmark_report  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
