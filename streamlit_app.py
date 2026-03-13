@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
 
 from train_demo import load_or_rebuild_bundle
+
+try:
+    import plotly.express as px  # type: ignore
+    import plotly.graph_objects as go  # type: ignore
+except ModuleNotFoundError:
+    px = None
+    go = None
 
 st.set_page_config(page_title="Multimodal RAG + Churn Demo", page_icon="AI", layout="wide")
 
@@ -21,6 +26,145 @@ def _risk_band(probability: float) -> tuple[str, str]:
     if probability >= 0.4:
         return "Moderate", "#C97A00"
     return "Low", "#1D7F5F"
+
+
+def _plotly_available() -> bool:
+    return px is not None and go is not None
+
+
+def _show_plotly_warning() -> None:
+    st.info("Plotly is not installed in this environment. Showing simplified Streamlit charts instead.")
+
+
+def _render_contract_mix(contract_mix: pd.DataFrame) -> None:
+    if _plotly_available():
+        fig = px.bar(
+            contract_mix,
+            x="contract_type",
+            y="customers",
+            color="contract_type",
+            title="Customer Mix by Contract Type",
+            color_discrete_sequence=["#0A7B83", "#C97A00", "#A23B72"],
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        return
+
+    _show_plotly_warning()
+    fallback = contract_mix.set_index("contract_type")[["customers"]]
+    st.bar_chart(fallback, use_container_width=True)
+
+
+def _render_model_metrics(results: pd.DataFrame) -> None:
+    if _plotly_available():
+        result_fig = px.bar(
+            results,
+            x="model",
+            y=["roc_auc", "f1", "recall"],
+            barmode="group",
+            title="Model Metrics Comparison",
+            color_discrete_sequence=["#0A7B83", "#A23B72", "#C97A00"],
+        )
+        st.plotly_chart(result_fig, use_container_width=True)
+        return
+
+    _show_plotly_warning()
+    fallback = results.set_index("model")[["roc_auc", "f1", "recall"]]
+    st.bar_chart(fallback, use_container_width=True)
+
+
+def _render_confusion_matrix(confusion_matrix: list[list[int]]) -> None:
+    if _plotly_available():
+        cm_fig = go.Figure(
+            data=go.Heatmap(
+                z=confusion_matrix,
+                x=["Pred 0", "Pred 1"],
+                y=["Actual 0", "Actual 1"],
+                colorscale="Blues",
+            )
+        )
+        cm_fig.update_layout(height=360)
+        st.plotly_chart(cm_fig, use_container_width=True)
+        return
+
+    _show_plotly_warning()
+    st.dataframe(
+        pd.DataFrame(confusion_matrix, index=["Actual 0", "Actual 1"], columns=["Pred 0", "Pred 1"]),
+        use_container_width=True,
+    )
+
+
+def _render_feature_importance(feature_importance: pd.DataFrame) -> None:
+    if _plotly_available():
+        imp_fig = px.bar(
+            feature_importance.sort_values("importance"),
+            x="importance",
+            y="feature",
+            orientation="h",
+            title="Feature Importance",
+            color="importance",
+            color_continuous_scale="Tealgrn",
+        )
+        st.plotly_chart(imp_fig, use_container_width=True)
+        return
+
+    _show_plotly_warning()
+    fallback = feature_importance.sort_values("importance").set_index("feature")[["importance"]]
+    st.bar_chart(fallback, use_container_width=True)
+
+
+def _render_monthly_spend_distribution(dataframe: pd.DataFrame) -> None:
+    if _plotly_available():
+        dist_fig = px.histogram(
+            dataframe,
+            x="monthly_spend",
+            color="churned",
+            nbins=24,
+            barmode="overlay",
+            title="Monthly Spend Distribution by Churn",
+            color_discrete_sequence=["#1D7F5F", "#B03A2E"],
+        )
+        st.plotly_chart(dist_fig, use_container_width=True)
+        return
+
+    _show_plotly_warning()
+    grouped = dataframe.groupby("churned", as_index=False)["monthly_spend"].mean()
+    st.bar_chart(grouped.set_index("churned"), use_container_width=True)
+
+
+def _render_regional_churn(region_df: pd.DataFrame) -> None:
+    if _plotly_available():
+        region_fig = px.bar(
+            region_df,
+            x="region",
+            y="churn_rate",
+            title="Regional Churn Rate",
+            color="churn_rate",
+            color_continuous_scale="Sunsetdark",
+        )
+        st.plotly_chart(region_fig, use_container_width=True)
+        return
+
+    _show_plotly_warning()
+    st.bar_chart(region_df.set_index("region")[["churn_rate"]], use_container_width=True)
+
+
+def _render_probability_distribution(probabilities: list[float]) -> None:
+    if _plotly_available():
+        prob_fig = px.bar(
+            pd.DataFrame({"class": ["Retain", "Churn"], "probability": probabilities}),
+            x="class",
+            y="probability",
+            color="class",
+            title="Class Probability Distribution",
+            color_discrete_sequence=["#1D7F5F", "#B03A2E"],
+        )
+        prob_fig.update_yaxes(range=[0, 1])
+        st.plotly_chart(prob_fig, use_container_width=True)
+        return
+
+    _show_plotly_warning()
+    fallback = pd.DataFrame({"probability": probabilities}, index=["Retain", "Churn"])
+    st.bar_chart(fallback, use_container_width=True)
 
 
 bundle = get_bundle()
@@ -54,15 +198,7 @@ with tabs[0]:
     overview_cols = st.columns([1.4, 1])
     with overview_cols[0]:
         contract_mix = pd.DataFrame(bundle["analytics"]["contract_mix"])
-        fig = px.bar(
-            contract_mix,
-            x="contract_type",
-            y="customers",
-            color="contract_type",
-            title="Customer Mix by Contract Type",
-            color_discrete_sequence=["#0A7B83", "#C97A00", "#A23B72"],
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        _render_contract_mix(contract_mix)
     with overview_cols[1]:
         st.subheader("Bundle Snapshot")
         st.json(
@@ -78,38 +214,17 @@ with tabs[1]:
     st.subheader("Model Comparison")
     st.dataframe(results_df, use_container_width=True, hide_index=True)
 
-    result_fig = px.bar(
-        results_df,
-        x="model",
-        y=["roc_auc", "f1", "recall"],
-        barmode="group",
-        title="Model Metrics Comparison",
-        color_discrete_sequence=["#0A7B83", "#A23B72", "#C97A00"],
-    )
-    st.plotly_chart(result_fig, use_container_width=True)
+    _render_model_metrics(results_df)
 
     lower_cols = st.columns(2)
     with lower_cols[0]:
         st.subheader("Best Model Confusion Matrix")
         cm = bundle["confusion_matrix"]
-        cm_fig = go.Figure(
-            data=go.Heatmap(z=cm, x=["Pred 0", "Pred 1"], y=["Actual 0", "Actual 1"], colorscale="Blues")
-        )
-        cm_fig.update_layout(height=360)
-        st.plotly_chart(cm_fig, use_container_width=True)
+        _render_confusion_matrix(cm)
     with lower_cols[1]:
         st.subheader("Top Feature Signals")
         if not feature_importance_df.empty:
-            imp_fig = px.bar(
-                feature_importance_df.sort_values("importance"),
-                x="importance",
-                y="feature",
-                orientation="h",
-                title="Feature Importance",
-                color="importance",
-                color_continuous_scale="Tealgrn",
-            )
-            st.plotly_chart(imp_fig, use_container_width=True)
+            _render_feature_importance(feature_importance_df)
         else:
             st.info("Feature importance is unavailable for the selected model.")
 
@@ -117,27 +232,10 @@ with tabs[2]:
     st.subheader("Analytics")
     analytics_cols = st.columns(2)
     with analytics_cols[0]:
-        dist_fig = px.histogram(
-            df,
-            x="monthly_spend",
-            color="churned",
-            nbins=24,
-            barmode="overlay",
-            title="Monthly Spend Distribution by Churn",
-            color_discrete_sequence=["#1D7F5F", "#B03A2E"],
-        )
-        st.plotly_chart(dist_fig, use_container_width=True)
+        _render_monthly_spend_distribution(df)
     with analytics_cols[1]:
         region_df = pd.DataFrame(bundle["analytics"]["regional_churn"])
-        region_fig = px.bar(
-            region_df,
-            x="region",
-            y="churn_rate",
-            title="Regional Churn Rate",
-            color="churn_rate",
-            color_continuous_scale="Sunsetdark",
-        )
-        st.plotly_chart(region_fig, use_container_width=True)
+        _render_regional_churn(region_df)
 
     st.subheader("Prediction Sample")
     st.dataframe(sample_predictions_df, use_container_width=True, hide_index=True)
@@ -228,18 +326,7 @@ with tabs[4]:
             unsafe_allow_html=True,
         )
 
-        prob_fig = px.bar(
-            pd.DataFrame(
-                {"class": ["Retain", "Churn"], "probability": [float(probabilities[0]), churn_probability]}
-            ),
-            x="class",
-            y="probability",
-            color="class",
-            title="Class Probability Distribution",
-            color_discrete_sequence=["#1D7F5F", "#B03A2E"],
-        )
-        prob_fig.update_yaxes(range=[0, 1])
-        st.plotly_chart(prob_fig, use_container_width=True)
+        _render_probability_distribution([float(probabilities[0]), churn_probability])
 
         with st.expander("Input Summary"):
             st.dataframe(sample, use_container_width=True, hide_index=True)
