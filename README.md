@@ -1,12 +1,26 @@
 # Real-Time Multimodal RAG System
 
-[![Python](https://img.shields.io/badge/python-3.11+-0A7B83?style=flat-square)](https://www.python.org/)
+[![CI](https://github.com/Muhammad-Farooq13/real-time-multimodal-rag-system/actions/workflows/ci.yml/badge.svg)](https://github.com/Muhammad-Farooq13/real-time-multimodal-rag-system/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/Muhammad-Farooq13/real-time-multimodal-rag-system/branch/main/graph/badge.svg)](https://codecov.io/gh/Muhammad-Farooq13/real-time-multimodal-rag-system)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-0A7B83?style=flat-square)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/ui-Streamlit-C8553D?style=flat-square)](https://streamlit.io/)
 [![FastAPI](https://img.shields.io/badge/api-FastAPI-1D7F5F?style=flat-square)](https://fastapi.tiangolo.com/)
-[![Vector%20Search](https://img.shields.io/badge/retrieval-Pinecone%20%7C%20FAISS-8A5A44?style=flat-square)](#pinecone-setup)
-[![Cache](https://img.shields.io/badge/cache-Redis%20Stack-C8553D?style=flat-square)](#redis-semantic-cache)
-[![CI](https://img.shields.io/badge/automation-GitHub%20Actions-2F4F4F?style=flat-square)](#ci-automation)
+[![License](https://img.shields.io/badge/license-MIT-2F4F4F?style=flat-square)](LICENSE)
 
 Production-oriented multimodal Retrieval-Augmented Generation system built to demonstrate applied AI engineering, not just model experimentation. The project now includes both a FastAPI retrieval service and a Streamlit demo dashboard backed by a self-healing model bundle for recruiter-friendly demonstrations.
+
+## Results Snapshot
+
+- Latest committed benchmark run: `local-proof-run`
+- HTTP latency p95: `4.93 ms`
+- HTTP latency p99: `66.74 ms`
+- Failure rate: `0.0000`
+- Test status: `7 passed`
+- Release tag: `v0.1.2`
+
+Benchmark evidence:
+
+- [benchmark_runs/local-proof-run/report.md](benchmark_runs/local-proof-run/report.md)
 
 ## Why This Project Matters
 
@@ -62,6 +76,7 @@ flowchart LR
 Full architecture and system positioning:
 
 - [docs/architecture.md](docs/architecture.md)
+- [docs/github-profile-snippets.md](docs/github-profile-snippets.md)
 - [docs/system-card.md](docs/system-card.md)
 - [docs/portfolio-summary.md](docs/portfolio-summary.md)
 
