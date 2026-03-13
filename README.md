@@ -307,7 +307,7 @@ Public-facing repository conventions are included:
 - [.github/ISSUE_TEMPLATE/bug_report.md](.github/ISSUE_TEMPLATE/bug_report.md)
 - [.github/ISSUE_TEMPLATE/feature_request.md](.github/ISSUE_TEMPLATE/feature_request.md)
 
-CODEOWNERS is configured for [Muhammad-Farooq-13](https://github.com/Muhammad-Farooq-13).
+CODEOWNERS is configured for [Muhammad-Farooq13](https://github.com/Muhammad-Farooq13).
 
 ## Redis Semantic Cache
 
@@ -387,7 +387,7 @@ If Pinecone credentials are missing or initialization fails, the service falls b
 
 - Name: Muhammad Farooq
 - Email: mfarooqshafee333@gmail.com
-- GitHub: [Muhammad-Farooq-13](https://github.com/Muhammad-Farooq-13)
+- GitHub: [Muhammad-Farooq13](https://github.com/Muhammad-Farooq13)
 
 ## Suggested Next Enhancements
 
