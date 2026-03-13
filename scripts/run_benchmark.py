@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 from datetime import datetime, timezone
@@ -32,9 +33,19 @@ def fetch_metrics(base_url: str) -> dict:
 
 
 def ensure_k6_available() -> str:
+    explicit = os.environ.get("K6_PATH", "").strip()
+    if explicit and Path(explicit).exists():
+        return explicit
+
     path = shutil.which("k6")
-    if path is None:
-        raise SystemExit("k6 was not found on PATH. Install k6 or run benchmark manually.")
+    if path is not None:
+        return path
+
+    default_windows_path = Path("C:/Program Files/k6/k6.exe")
+    if default_windows_path.exists():
+        return str(default_windows_path)
+
+    raise SystemExit("k6 was not found on PATH. Install k6 or set K6_PATH.")
     return path
 
 

@@ -11,8 +11,11 @@ def load_json(path: Path) -> dict:
 
 def _metric_value(summary: dict, metric_name: str, field: str, default: float = 0.0) -> float:
     metric = summary.get("metrics", {}).get(metric_name, {})
-    values = metric.get("values", {})
-    raw = values.get(field, default)
+    values = metric.get("values")
+    if isinstance(values, dict) and field in values:
+        raw = values.get(field, default)
+    else:
+        raw = metric.get(field, default)
     try:
         return float(raw)
     except (TypeError, ValueError):
@@ -20,14 +23,23 @@ def _metric_value(summary: dict, metric_name: str, field: str, default: float = 
 
 
 def parse_k6_summary(summary: dict) -> dict:
+    p50 = _metric_value(summary, "http_req_duration", "p(50)")
+    if p50 == 0.0:
+        p50 = _metric_value(summary, "http_req_duration", "med")
+
+    p99 = _metric_value(summary, "http_req_duration", "p(99)")
+    if p99 == 0.0:
+        p99 = _metric_value(summary, "http_req_duration", "max")
+
     return {
         "vus_max": _metric_value(summary, "vus_max", "max"),
         "http_reqs": _metric_value(summary, "http_reqs", "count"),
-        "http_req_failed_rate": _metric_value(summary, "http_req_failed", "rate"),
+        "http_req_failed_rate": _metric_value(summary, "http_req_failed", "rate")
+        or _metric_value(summary, "http_req_failed", "value"),
         "http_req_duration_avg": _metric_value(summary, "http_req_duration", "avg"),
-        "http_req_duration_p50": _metric_value(summary, "http_req_duration", "p(50)"),
+        "http_req_duration_p50": p50,
         "http_req_duration_p95": _metric_value(summary, "http_req_duration", "p(95)"),
-        "http_req_duration_p99": _metric_value(summary, "http_req_duration", "p(99)"),
+        "http_req_duration_p99": p99,
         "iteration_duration_avg": _metric_value(summary, "iteration_duration", "avg"),
         "iterations": _metric_value(summary, "iterations", "count"),
     }

@@ -1,0 +1,15 @@
+{
+  "counters": {
+    "requests_total": 602.0,
+    "requests_mode_text_total": 602.0,
+    "cache_miss_total": 1.0,
+    "cache_exact_hit_total": 601.0
+  },
+  "latency": {
+    "count": 602,
+    "avg_ms": 0.7354,
+    "p50_ms": 0.6419,
+    "p95_ms": 1.1063,
+    "p99_ms": 1.2946
+  }
+}

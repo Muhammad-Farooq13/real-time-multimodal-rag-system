@@ -233,6 +233,10 @@ This generates a timestamped folder under `benchmark_runs/` with:
 
 These artifacts are meant to support portfolio claims with raw evidence rather than screenshots alone.
 
+Example committed benchmark evidence:
+
+- [benchmark_runs/local-proof-run/report.md](benchmark_runs/local-proof-run/report.md)
+
 ## Observability
 
 Metrics endpoints:
@@ -306,6 +310,7 @@ Public-facing repository conventions are included:
 - [.github/pull_request_template.md](.github/pull_request_template.md)
 - [.github/ISSUE_TEMPLATE/bug_report.md](.github/ISSUE_TEMPLATE/bug_report.md)
 - [.github/ISSUE_TEMPLATE/feature_request.md](.github/ISSUE_TEMPLATE/feature_request.md)
+- [LICENSE](LICENSE)
 
 CODEOWNERS is configured for [Muhammad-Farooq13](https://github.com/Muhammad-Farooq13).
 

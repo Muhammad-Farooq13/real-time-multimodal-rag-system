@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.2 - 2026-03-13
+
+- added an MIT license for safe public GitHub publication
+- updated GitHub repository metadata and live repository description
+- aligned repository ownership metadata with the authenticated GitHub account
+- fixed benchmark parsing for the current k6 JSON summary schema
+- generated and prepared a committed local benchmark evidence run
+
 ## v0.1.0 - 2026-03-13
 
 - inventoried the repository and validated the existing API and benchmark test suite
